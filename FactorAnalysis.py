@@ -1,4 +1,5 @@
 import numpy.linalg as nlg
+from pandas.core.frame import DataFrame
 import pandas as pd
 import numpy as np
 import math
@@ -6,13 +7,30 @@ from factor_analyzer import FactorAnalyzer
 from matplotlib import pyplot as plt
 import seaborn as sns
 from numpy import array
+import sys
 
 
 # 加载数据
-def load_data():
-    data = pd.read_csv('F:/Python/workspace/py_run_on_java/raw_data_23.csv')
+def load_data(data_str):
+    # data = pd.read_csv('F:/Python/workspace/py_run_on_java/raw_data_23.csv')
+    # print(type(data))
     # print(data)
-    return data
+    row_list = data_str.replace(' ', '').replace('[', '').split("],")
+    row_list[len(row_list) - 1] = row_list[len(row_list) - 1][:-2]
+    # [[0] * cols for i in range(rows)]
+
+    origin_data_arr = [[0] * 8 for i in range(len(row_list))]
+    # print(origin_data_arr)
+    for i in range(len(row_list)):
+        row = row_list[i].split(",")
+        for j in range(len(row)):
+            origin_data_arr[i][j] = float(row[j])
+
+    origin_data_df = DataFrame(origin_data_arr)
+    origin_data_df.rename(columns={0: 'patents', 1: 'royalties', 2: 'internet', 3: 'exports',
+                                   4: 'telephones', 5: 'electricity', 6: 'schooling', 7: 'university'}, inplace=True)
+    # print(origin_data_df)
+    return origin_data_df
 
 
 # 相关系数矩阵C
@@ -155,7 +173,7 @@ def cal_weight(x):
 
 
 if __name__ == '__main__':
-    data = load_data()
+    data = load_data(sys.argv[1])
     # print(data)
     corr = correlation_coefficient_matrix(data)
     fa = init_fa(data)
