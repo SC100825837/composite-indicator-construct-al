@@ -11,22 +11,23 @@ import sys
 
 
 # 加载数据
-def load_data(data_str):
+def load_data(data_str, column_count):
+    # data = pd.read_csv('E:/Python/workspace/composite-indicator-construct-py/raw_data_23.csv')
     # print(data)
-    row_list = data_str.replace(' ', '').replace('[', '').split("],")
-    row_list[len(row_list) - 1] = row_list[len(row_list) - 1][:-2]
-    # [[0] * cols for i in range(rows)]
+    # print('*************' + data_str)
+    row_list = data_str.replace(' ', '').replace('[', '').replace(']]', '').split("],")
+    # print(row_list)
 
-    origin_data_arr = [[0] * 8 for i in range(len(row_list))]
-    # print(origin_data_arr)
+    origin_data_arr = [[0] * int(column_count) for i in range(len(row_list))]
+
     for i in range(len(row_list)):
         row = row_list[i].split(",")
         for j in range(len(row)):
             origin_data_arr[i][j] = float(row[j])
 
     origin_data_df = DataFrame(origin_data_arr)
-    origin_data_df.rename(columns={0: 'patents', 1: 'royalties', 2: 'internet', 3: 'exports',
-                                   4: 'telephones', 5: 'electricity', 6: 'schooling', 7: 'university'}, inplace=True)
+    # origin_data_df.rename(columns={0: 'patents', 1: 'royalties', 2: 'internet', 3: 'exports',
+    #                                4: 'telephones', 5: 'electricity', 6: 'schooling', 7: 'university'}, inplace=True)
     # print(origin_data_df)
     return origin_data_df
 
@@ -77,7 +78,7 @@ def get_communalities(fa):
 
 
 if __name__ == '__main__':
-    data = load_data(sys.argv[1])
+    data = load_data(sys.argv[1], sys.argv[2])
     # print(data)
     corr_arr = correlation_coefficient_matrix_arr(data)
     print(corr_arr)

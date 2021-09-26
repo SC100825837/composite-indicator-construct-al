@@ -11,24 +11,23 @@ import sys
 
 
 # 加载数据
-def load_data(data_str):
-    # data = pd.read_csv('F:/Python/workspace/py_run_on_java/raw_data_23.csv')
-    # print(type(data))
+def load_data(data_str, column_count):
+    # data = pd.read_csv('E:/Python/workspace/composite-indicator-construct-py/raw_data_23.csv')
     # print(data)
-    row_list = data_str.replace(' ', '').replace('[', '').split("],")
-    row_list[len(row_list) - 1] = row_list[len(row_list) - 1][:-2]
-    # [[0] * cols for i in range(rows)]
+    # print('*************' + data_str)
+    row_list = data_str.replace(' ', '').replace('[', '').replace(']]', '').split("],")
+    # print(row_list)
 
-    origin_data_arr = [[0] * 8 for i in range(len(row_list))]
-    # print(origin_data_arr)
+    origin_data_arr = [[0] * column_count for i in range(len(row_list))]
+
     for i in range(len(row_list)):
         row = row_list[i].split(",")
         for j in range(len(row)):
             origin_data_arr[i][j] = float(row[j])
 
     origin_data_df = DataFrame(origin_data_arr)
-    origin_data_df.rename(columns={0: 'patents', 1: 'royalties', 2: 'internet', 3: 'exports',
-                                   4: 'telephones', 5: 'electricity', 6: 'schooling', 7: 'university'}, inplace=True)
+    # origin_data_df.rename(columns={0: 'patents', 1: 'royalties', 2: 'internet', 3: 'exports',
+    #                                4: 'telephones', 5: 'electricity', 6: 'schooling', 7: 'university'}, inplace=True)
     # print(origin_data_df)
     return origin_data_df
 
@@ -48,14 +47,14 @@ def init_fa(data):
 
 
 # 成分旋转矩阵（旋转因子负荷矩阵），可以看出特征的归属因子
-def rotated_factor_loadings_matrix_arr(fa):
+def rotated_factor_loadings_matrix_arr(fa, colCounts):
     loadings = fa.loadings_
-    Row = 8  # 二维数组中一位列表的个数
+    Row = colCounts  # 二维数组中一位列表的个数
     Col = len(loadings[0])  # 每个列表的个数
     arr = [[] * Row for i in range(Col)]  # 给定矩阵长、宽 创建一个空的二维数组
     for i in range(Row):
         for j in range(Col):
-            arr[j].append(loadings[i][j])
+            arr[j].append(round(loadings[i][j], 6))
     # print(loadings)
     # print(arr)
     return arr
@@ -84,7 +83,7 @@ def get_figure(loadings, fa, data):
 
 # 计算特征值和特征向量
 # 利用变量名和特征值建立一个数据框
-def get_eigenvalues_eigenvectors(corr, data):
+def get_eigenvalues_eigenvectors(corr, data, colCounts):
     eig_value, eig_vector = nlg.eig(corr)
     eig = pd.DataFrame()
     # 列名
@@ -95,16 +94,21 @@ def get_eigenvalues_eigenvectors(corr, data):
     arr1 = []
     # 方差百分比
     arr2 = []
-    for i in range(8):
-        arr1.append(eig['特征值'][i:i + 1].sum() / eig['特征值'].sum() * 100)
-        arr2.append(eig['特征值'][:i + 1].sum() / eig['特征值'].sum() * 100)
+    for i in range(colCounts):
+        # 保留6位小数
+        arr1.append(round(float(eig['特征值'][i:i + 1].sum() / eig['特征值'].sum() * 100), 6))
+        arr2.append(round(float(eig['特征值'][:i + 1].sum() / eig['特征值'].sum() * 100), 6))
 
     eig['方差百分比'] = arr1
     eig['积累方差'] = arr2
 
     arr3 = []
     for i in range(len(eig_value)):
-        arr3.append(eig_value[i])
+        arr3.append(round(float(eig_value[i]), 6))
+
+    # print('arr3', arr3)
+    # print('arr1', arr1)
+    # print('arr2', arr2)
     arr4 = [
         arr3,
         arr1,
@@ -164,8 +168,7 @@ def cal_weight(x):
     # 计算各指标的权重
     w = [[None] * 1 for i in range(cols)]
     for j in range(0, cols):
-        wj = d[j] / sum(d)
-        w[j] = wj
+        w[j] = round(d[j] / sum(d), 6)
         # 计算各样本的综合得分,用最原始的数据
     # w = pd.DataFrame(w)
     # print(w)
@@ -173,20 +176,21 @@ def cal_weight(x):
 
 
 if __name__ == '__main__':
-    data = load_data(sys.argv[1])
+    data = load_data(sys.argv[1], int(sys.argv[2]))
     # print(data)
     corr = correlation_coefficient_matrix(data)
     fa = init_fa(data)
     loadings = rotated_factor_loadings_matrix(fa)
-    loadings_arr = rotated_factor_loadings_matrix_arr(fa)
-    # print(loadings)
+    loadings_arr = rotated_factor_loadings_matrix_arr(fa, int(sys.argv[2]))
+    # print('loadings_arr', loadings_arr)
     communality = get_communalities(fa)
-    eig = get_eigenvalues_eigenvectors(corr, data)
-    # print(eig)
+    # print('corr', corr)
+    eig = get_eigenvalues_eigenvectors(corr, data, int(sys.argv[2]))
+    # print('eig', eig)
     factor_variance = get_rotated_eigenvalues(fa)
     expl_tot = get_Expl_Tot(factor_variance)
     weight = cal_weight(pd.DataFrame(list(zip(*loadings))))
-    # print(weight)
+    # print('weight', weight)
     result = [
         loadings_arr,
         eig,
