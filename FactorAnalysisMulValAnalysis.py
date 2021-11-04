@@ -46,8 +46,11 @@ def correlation_coefficient_matrix_arr(data):
 
 
 # principal主成分分析，varimax因子旋转
-def init_fa(data):
-    fa = FactorAnalyzer(n_factors=4, method='principal', rotation="varimax")
+def init_fa(data, n_factors, choose):
+    if choose == "ml":
+        fa = FactorAnalyzer(n_factors=int(n_factors), method='ml')
+    else:
+        fa = FactorAnalyzer(n_factors=int(n_factors), rotation="varimax")
     fa.fit(data)
     return fa
 
@@ -82,7 +85,7 @@ if __name__ == '__main__':
     # print(data)
     corr_arr = correlation_coefficient_matrix_arr(data)
     print(corr_arr)
-    fa = init_fa(data)
+    fa = init_fa(data, sys.argv[3], sys.argv[4])
     loadings = rotated_factor_loadings_matrix(fa)
     loadings_arr = rotated_factor_loadings_matrix_arr(fa)
     # print(loadings)
